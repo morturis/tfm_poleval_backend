@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "target": "ES2022",
+    "module": "CommonJS",
+    "sourceMap": true,
+    "outDir": "dist",
+    "baseUrl": ".",
+    "noImplicitAny": false,
+    "allowJs": true,
+    "esModuleInterop": true,
+    "incremental": true,
+
+    "resolveJsonModule": true,
+
+    "paths": {
+      "app": ["app"]
+    }
+  },
+  "ts-node": {
+    //"esm": true
+    "swc": true
+  },
+  "exclude": ["node_modules", "dist", "scratch"]
+}
