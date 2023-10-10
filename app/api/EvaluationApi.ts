@@ -39,6 +39,11 @@ const buildKey = (
 };
 
 evalApi.get(
+  "/all",
+  wrapControllerMiddleware(verifyUserPermissions()), //dont need any permission, just to be logged in
+  wrapControllerMiddleware(controller.getAllByUser)
+);
+evalApi.get(
   "/:id",
   wrapControllerMiddleware(verifyUserPermissions(Permissions.EDIT_EVAL)),
   buildKey,

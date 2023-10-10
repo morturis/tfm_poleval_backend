@@ -48,9 +48,9 @@ export const encodeToken = async (obj: Record<string, unknown>) => {
 };
 //TODO this method is only really relevant to evaluations
 export const verifyUserPermissions =
-  (requiredPermission: Permissions) =>
+  (requiredPermission?: Permissions) =>
   async (
-    req: Request<{ id: string }, any, any>,
+    req: Request<{ id: string } & Record<string, unknown>, any, any>,
     res: Response,
     next: NextFunction
   ) => {
@@ -62,6 +62,13 @@ export const verifyUserPermissions =
     const loggedUser = decodedToken.payload as User;
     if (!loggedUser)
       throw errors.create(ErrorMessages.unauthorized, "JWT validaton error");
+
+    //stores user as a param in case it is necessary later
+    req.params.user = loggedUser;
+    if (!requiredPermission) {
+      next();
+      return;
+    }
 
     const {
       params: { id },
