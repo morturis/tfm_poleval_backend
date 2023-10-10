@@ -40,7 +40,7 @@ export class Controller<T> {
 
     const modifiedObj = {
       ...obj,
-      body,
+      ...body,
     };
     const response = await Controller.database.set(id, modifiedObj);
     res.status(200).send(response);

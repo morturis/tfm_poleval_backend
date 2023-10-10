@@ -11,6 +11,14 @@ const errorList: CustomError[] = [
     message: ErrorMessages.required_fields_missing,
   },
   {
+    code: 403,
+    message: ErrorMessages.unauthorized,
+  },
+  {
+    code: 404,
+    message: ErrorMessages.not_found,
+  },
+  {
     code: 409, //Conflict
     message: ErrorMessages.user_already_exists,
   },

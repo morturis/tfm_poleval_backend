@@ -4,8 +4,8 @@ const DelimitationSchema = z
   .object({
     other: z.string(),
     timePeriod: z.strictObject({
-      startDate: z.date(),
-      endDate: z.date(),
+      startDate: z.string(), //ISO string date
+      endDate: z.string(), //ISO string date
     }),
     geo: z.string(),
     actors: z.array(z.string()),
@@ -28,7 +28,7 @@ const CriteriaSchema = z.strictObject({
 });
 
 const MeasurementSchema = z.strictObject({
-  date: z.date(),
+  date: z.string(), //ISO string date
   value: z.string().or(z.number()),
 });
 
@@ -45,7 +45,7 @@ const InterventionSchema = z.strictObject({
   blockers: z.string().optional(),
   indicators: z.array(IndicatorSchema),
 });
-
+export const EvaluationResponseSchema = z.record(z.string(), z.string());
 export const EvaluationSchema = z.strictObject({
   code: z.string(),
   intervention: InterventionSchema,
@@ -59,6 +59,8 @@ export const EvaluationSchema = z.strictObject({
   teamMembers: z.array(EvalTeamMemberSchema).optional(),
 
   form: z.record(z.string(), z.unknown()).optional(),
+  responses: z.array(EvaluationResponseSchema).optional(),
+
   tools: z.array(ToolTechniqueSchema).optional(),
   techniques: z.array(ToolTechniqueSchema).optional(),
   criteria: z.array(CriteriaSchema).optional(),

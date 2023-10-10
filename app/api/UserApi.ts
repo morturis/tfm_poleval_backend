@@ -2,7 +2,12 @@ import express, { NextFunction, Request, Response } from "express";
 import { UserController } from "../../app/controllers/UserController";
 import { ErrorMessages } from "../../app/errors/Errors.type";
 import { errors } from "../../app/errors/errors";
-import { LoginObject, User, UserSchema } from "../../app/types/User.type";
+import {
+  LoginObject,
+  LoginObjectSchema,
+  User,
+  UserSchema,
+} from "../../app/types/User.type";
 import { validateBodySchema, wrapControllerMiddleware } from "./ApiHelpers";
 
 export const userApi = express.Router();
@@ -24,7 +29,7 @@ const buildKey = (
     throw errors.create(ErrorMessages.required_fields_missing, "username");
 
   const id = paramsId || bodyId;
-  if (!paramsId) req.params.id = `user-${id}`; //TODO secondary effect should be avoided
+  req.params.id = `user-${id}`; //TODO secondary effect should be avoided
   next();
 };
 
@@ -47,4 +52,18 @@ userApi.post(
   buildKey,
   validateBodySchema(UserSchema),
   wrapControllerMiddleware(controller.post)
+);
+
+userApi.post(
+  "/register",
+  buildKey,
+  validateBodySchema(LoginObjectSchema),
+  wrapControllerMiddleware(controller.register)
+);
+
+userApi.post(
+  "/login",
+  buildKey,
+  validateBodySchema(LoginObjectSchema),
+  wrapControllerMiddleware(controller.login)
 );

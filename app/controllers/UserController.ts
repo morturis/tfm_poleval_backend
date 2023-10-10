@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import * as jwt from "jsonwebtoken";
+import { encodeToken } from "../../app/api/ApiHelpers";
 import { ErrorMessages } from "../../app/errors/Errors.type";
 import { errors } from "../../app/errors/errors";
 import { LoginObject, User } from "../../app/types/User.type";
@@ -20,7 +20,7 @@ export class UserController extends Controller<User> {
     } = req;
 
     //check if generated id already exists
-    const userAlreadyExists = !!(await Controller.database.get(id));
+    const userAlreadyExists = !!(await Controller.database.get<User>(id));
     if (userAlreadyExists)
       throw errors.create(ErrorMessages.user_already_exists);
 
@@ -28,8 +28,25 @@ export class UserController extends Controller<User> {
     const newUser = { ...body, ...defaultPermissions };
     const result = await Controller.database.set(id, newUser);
 
-    const token = jwt.sign();
+    const token = await encodeToken(result);
 
-    res.status(201).send(result);
+    res.status(201).send({ username: result.username, token });
+  }
+
+  async login(req: Request<{ id: string }, any, LoginObject>, res: Response) {
+    const {
+      params: { id }, //generated id
+      body, //login object
+    } = req;
+
+    const registeredUser = await Controller.database.get<User>(id);
+    if (!registeredUser) throw errors.create(ErrorMessages.not_found);
+
+    const passwordsMatch = body.password === registeredUser.password;
+    if (!passwordsMatch) throw errors.create(ErrorMessages.unauthorized);
+
+    const token = await encodeToken(registeredUser);
+
+    res.status(200).send({ username: registeredUser.username, token });
   }
 }

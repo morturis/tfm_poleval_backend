@@ -14,4 +14,5 @@ export enum ErrorMessages {
   bad_request = "bad_request",
   required_fields_missing = "required_fields_missing",
   user_already_exists = "user_already_exists",
+  unauthorized = "unauthorized",
 }
