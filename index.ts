@@ -1,3 +1,4 @@
+import cors from "cors";
 import express from "express";
 import { evalApi } from "./app/api/EvaluationApi";
 import { userApi } from "./app/api/UserApi";
@@ -7,6 +8,7 @@ const app = express();
 const port = 3000;
 
 app.use(express.json());
+app.use(cors());
 app.use("/evaluation", evalApi);
 app.use("/user", userApi);
 
