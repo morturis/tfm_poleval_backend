@@ -42,9 +42,10 @@ export class EvaluationController extends Controller<Evaluation> {
     const user = req.params?.user as User; //TODO this is a naive check
     if (!user) throw errors.create(ErrorMessages.bad_request);
 
-    const result: Record<string, unknown[]> = {};
+    const result: Record<string, Record<string, unknown>> = {};
     for (const ev of user.evaluations) {
       const { eval_name, permissions } = ev;
+
       //In case we ever want to add a state or something similar
       const evaluation = await Controller.database.get<Evaluation>(
         `eval-${eval_name}`
@@ -52,10 +53,13 @@ export class EvaluationController extends Controller<Evaluation> {
 
       permissions.forEach(
         (perm) =>
-          (result[perm] = [
-            ...(result[perm] || []),
-            { code: eval_name, intervention: evaluation.intervention.name },
-          ])
+          (result[perm] = {
+            ...(result[perm] || {}),
+            [`${Object.keys(result[perm] || {}).length}`]: {
+              eval_name: eval_name,
+              intervention_name: evaluation.intervention.name,
+            },
+          })
       );
     }
     res.status(200).send(result);
