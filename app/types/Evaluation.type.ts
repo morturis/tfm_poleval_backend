@@ -14,7 +14,8 @@ const DelimitationSchema = z
 
 const EvalTeamMemberSchema = z.strictObject({
   name: z.string(),
-  role: z.enum(["leader", "member", "other"]),
+  role: z.string(),
+  type: z.enum(["leader", "member", "other"]),
 });
 
 const ToolTechniqueSchema = z.strictObject({
@@ -58,7 +59,7 @@ export const EvaluationSchema = z.strictObject({
   delimitation: DelimitationSchema.optional(),
   teamMembers: z.array(EvalTeamMemberSchema).optional(),
 
-  form: z.record(z.string(), z.unknown()).optional(),
+  form: z.array(z.unknown()).optional(),
   responses: z.array(EvaluationResponseSchema).optional(),
 
   tools: z.array(ToolTechniqueSchema).optional(),
