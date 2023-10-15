@@ -29,9 +29,23 @@ const buildKey = (
     throw errors.create(ErrorMessages.required_fields_missing, "username");
 
   const id = paramsId || bodyId;
-  req.params.id = `user-${id}`; //TODO secondary effect should be avoided
+  req.params.id = UserController.buildKeyFunction(id); //TODO secondary effect should be avoided
   next();
 };
+
+userApi.post(
+  "/register",
+  buildKey,
+  validateBodySchema(LoginObjectSchema),
+  wrapControllerMiddleware(controller.register)
+);
+
+userApi.post(
+  "/login",
+  buildKey,
+  validateBodySchema(LoginObjectSchema),
+  wrapControllerMiddleware(controller.login)
+);
 
 userApi.get("/:id", buildKey, wrapControllerMiddleware(controller.get));
 userApi.delete("/:id", buildKey, wrapControllerMiddleware(controller.delete));
@@ -52,18 +66,4 @@ userApi.post(
   buildKey,
   validateBodySchema(UserSchema),
   wrapControllerMiddleware(controller.post)
-);
-
-userApi.post(
-  "/register",
-  buildKey,
-  validateBodySchema(LoginObjectSchema),
-  wrapControllerMiddleware(controller.register)
-);
-
-userApi.post(
-  "/login",
-  buildKey,
-  validateBodySchema(LoginObjectSchema),
-  wrapControllerMiddleware(controller.login)
 );

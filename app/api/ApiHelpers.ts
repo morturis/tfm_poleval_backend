@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import * as jose from "jose";
 import { ZodSchema } from "zod";
+import { UserController } from "../../app/controllers/UserController";
 import { ErrorMessages } from "../../app/errors/Errors.type";
 import { errors } from "../../app/errors/errors";
 import { Permissions, User } from "../../app/types/User.type";
@@ -74,7 +75,11 @@ export const verifyUserPermissions =
       params: { id },
     } = req;
 
-    const userEvaluation = loggedUser.evaluations.find(
+    //FIXME this is insanely inefficient
+    const storedUser = await new UserController().getCurrentFormOfUser(
+      loggedUser
+    );
+    const userEvaluation = storedUser.evaluations.find(
       (evaluation) => evaluation.eval_name === id
     );
     if (!userEvaluation)

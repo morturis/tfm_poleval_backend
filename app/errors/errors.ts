@@ -20,7 +20,7 @@ const errorList: CustomError[] = [
   },
   {
     code: 409, //Conflict
-    message: ErrorMessages.user_already_exists,
+    message: ErrorMessages.already_exists,
   },
 ];
 

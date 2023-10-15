@@ -13,6 +13,6 @@ export enum ErrorMessages {
   not_inserted = "not_inserted",
   bad_request = "bad_request",
   required_fields_missing = "required_fields_missing",
-  user_already_exists = "user_already_exists",
+  already_exists = "already_exists",
   unauthorized = "unauthorized",
 }

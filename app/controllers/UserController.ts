@@ -10,6 +10,10 @@ const defaultPermissions: Pick<User, "evaluations"> = {
 };
 
 export class UserController extends Controller<User> {
+  static buildKeyFunction = (id: string): string => {
+    return `user-${id}`;
+  };
+
   async register(
     req: Request<{ id: string }, any, LoginObject>,
     res: Response
@@ -20,9 +24,8 @@ export class UserController extends Controller<User> {
     } = req;
 
     //check if generated id already exists
-    const userAlreadyExists = !!(await Controller.database.get<User>(id));
-    if (userAlreadyExists)
-      throw errors.create(ErrorMessages.user_already_exists);
+    const userAlreadyExists = await Controller.database.get<User>(id);
+    if (userAlreadyExists) throw errors.create(ErrorMessages.already_exists);
 
     //insert into database
     const newUser = { ...body, ...defaultPermissions };
@@ -48,5 +51,11 @@ export class UserController extends Controller<User> {
     const token = await encodeToken(registeredUser);
 
     res.status(200).send({ username: registeredUser.username, token });
+  }
+
+  async getCurrentFormOfUser(user: User) {
+    return await Controller.database.get<User>(
+      UserController.buildKeyFunction(user.username)
+    );
   }
 }

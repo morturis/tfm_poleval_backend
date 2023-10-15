@@ -41,7 +41,7 @@ export class RedisDatabase {
     await this.checkConnection();
 
     const storedValue = await RedisDatabase.client.get(key);
-    if (!storedValue) throw errors.create(ErrorMessages.not_found);
+    if (!storedValue) return undefined as T;
 
     return JSON.parse(storedValue) as T;
   }

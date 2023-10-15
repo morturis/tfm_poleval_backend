@@ -15,7 +15,6 @@ import {
 } from "./ApiHelpers";
 
 export const evalApi = express.Router();
-const controller = new EvaluationController();
 const buildKey = (
   req: Request<{ id: string }, any, Evaluation>,
   res: Response,
@@ -34,14 +33,21 @@ const buildKey = (
     throw errors.create(ErrorMessages.required_fields_missing, "code");
 
   const id = paramsId || bodyId;
-  req.params.id = `eval-${id}`; //TODO secondary effect should be avoided
+  req.params.id = EvaluationController.buildKeyFunction(id); //TODO secondary effect should be avoided
   next();
 };
+const controller = new EvaluationController();
 
 evalApi.get(
   "/all",
   wrapControllerMiddleware(verifyUserPermissions()), //dont need any permission, just to be logged in
   wrapControllerMiddleware(controller.getAllByUser)
+);
+evalApi.get(
+  "/:id/exists",
+  wrapControllerMiddleware(verifyUserPermissions()), //don´t need any permission
+  buildKey,
+  wrapControllerMiddleware(controller.checkExistence)
 );
 evalApi.get(
   "/:id",
@@ -71,10 +77,10 @@ evalApi.put(
 );
 evalApi.post(
   "/",
-  wrapControllerMiddleware(verifyUserPermissions(Permissions.EDIT_EVAL)),
+  wrapControllerMiddleware(verifyUserPermissions()),
   buildKey,
-  validateBodySchema(EvaluationSchema),
-  wrapControllerMiddleware(controller.post)
+  validateBodySchema(EvaluationSchema.partial()),
+  wrapControllerMiddleware(controller.create) //the classic post method from the abstract controller does not update the user with the permissions
 );
 
 evalApi.get(
