@@ -35,18 +35,24 @@ const MeasurementSchema = z.strictObject({
 
 const IndicatorSchema = z.strictObject({
   name: z.string(),
-  measurements: z.array(MeasurementSchema),
+  measurements: z.array(MeasurementSchema).optional(),
+  targetValue: z.string().optional(),
 });
 
 const InterventionSchema = z.strictObject({
-  name: z.string(),
+  name: z.string().optional(),
   problemToFix: z.string().optional(),
   strategicPlan: z.string().optional(),
   otherInterventions: z.string().optional(),
   blockers: z.string().optional(),
   indicators: z.array(IndicatorSchema),
 });
+const ConclusionRecomendationSchema = z.strictObject({
+  text: z.string(),
+  reason: z.string(),
+});
 export const EvaluationResponseSchema = z.record(z.string(), z.string());
+
 export const EvaluationSchema = z.strictObject({
   code: z.string(),
   intervention: InterventionSchema,
@@ -67,6 +73,9 @@ export const EvaluationSchema = z.strictObject({
   criteria: z.array(CriteriaSchema).optional(),
 
   indicators: z.array(IndicatorSchema).optional(),
+
+  conclusions: z.array(ConclusionRecomendationSchema).optional(),
+  recomendations: z.array(ConclusionRecomendationSchema).optional(),
 });
 
 export type Evaluation = z.infer<typeof EvaluationSchema>;

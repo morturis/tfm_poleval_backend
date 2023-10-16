@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { RedisDatabase } from "../../app/database/RedisDatabase";
 import { ErrorMessages } from "../../app/errors/Errors.type";
 import { errors } from "../../app/errors/errors";
+import { merge } from "lodash";
 
 export class Controller<T> {
   static database = new RedisDatabase();
@@ -38,10 +39,7 @@ export class Controller<T> {
 
     if (!obj) throw errors.create(ErrorMessages.not_found);
 
-    const modifiedObj = {
-      ...obj,
-      ...body,
-    };
+    const modifiedObj = merge(obj, body);
     const response = await Controller.database.set(id, modifiedObj);
     res.status(200).send(response);
   }
