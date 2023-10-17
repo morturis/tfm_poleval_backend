@@ -15,6 +15,10 @@ const errorList: CustomError[] = [
     message: ErrorMessages.unauthorized,
   },
   {
+    code: 403,
+    message: ErrorMessages.token_expired,
+  },
+  {
     code: 404,
     message: ErrorMessages.not_found,
   },

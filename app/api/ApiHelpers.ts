@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import * as jose from "jose";
+import { JOSEError } from "jose/dist/types/util/errors";
 import { ZodSchema } from "zod";
 import { ErrorMessages } from "../../app/errors/Errors.type";
 import { errors } from "../../app/errors/errors";
@@ -23,7 +24,7 @@ export const wrapControllerMiddleware =
     }
   };
 
-export const  validateBodySchema =
+export const validateBodySchema =
   (schema: ZodSchema) =>
   (req: Request<any, any, any>, res: Response, next: NextFunction) => {
     const { body } = req;
@@ -32,7 +33,7 @@ export const  validateBodySchema =
     if (!parsingResult.success) {
       throw errors.create(ErrorMessages.bad_request, parsingResult);
     }
-    req.body = parsingResult.data
+    req.body = parsingResult.data;
     next();
   };
 
@@ -62,7 +63,13 @@ export const verifyUserPermissions =
     if (!authToken)
       throw errors.create(ErrorMessages.unauthorized, "Auth token missing");
 
-    const decodedToken = await jose.jwtVerify(authToken, signingSecret);
+    let decodedToken;
+    try {
+      decodedToken = await jose.jwtVerify(authToken, signingSecret);
+    } catch (e) {
+      if ((e as JOSEError).code == "ERR_JWT_EXPIRED")
+        throw errors.create(ErrorMessages.token_expired, (e as JOSEError).code);
+    }
     const loggedUser = decodedToken.payload as User;
     if (!loggedUser)
       throw errors.create(ErrorMessages.unauthorized, "JWT validaton error");

@@ -16,4 +16,5 @@ export enum ErrorMessages {
   already_exists = "already_exists",
   unauthorized = "unauthorized",
   internal_server_error = "internal_server_error",
+  token_expired = "token_expired",
 }
