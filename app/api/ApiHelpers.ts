@@ -1,9 +1,9 @@
 import { NextFunction, Request, Response } from "express";
 import * as jose from "jose";
 import { ZodSchema } from "zod";
-import { UserController } from "../../app/controllers/UserController";
 import { ErrorMessages } from "../../app/errors/Errors.type";
 import { errors } from "../../app/errors/errors";
+import { UserService } from "../../app/services/UserService";
 import { Permissions, User } from "../../app/types/User.type";
 
 //Wrapper that adds a try catch block to any request
@@ -47,7 +47,9 @@ export const encodeToken = async (obj: Record<string, unknown>) => {
     .setExpirationTime("1h")
     .sign(signingSecret);
 };
+
 //TODO this method is only really relevant to evaluations
+const userService = new UserService();
 export const verifyUserPermissions =
   (requiredPermission?: Permissions) =>
   async (
@@ -76,9 +78,7 @@ export const verifyUserPermissions =
     } = req;
 
     //FIXME this is insanely inefficient
-    const storedUser = await new UserController().getCurrentFormOfUser(
-      loggedUser
-    );
+    const storedUser = await userService.get(loggedUser.username);
     const userEvaluation = storedUser.evaluations.find(
       (evaluation) => evaluation.eval_name === id
     );

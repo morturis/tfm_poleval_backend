@@ -15,4 +15,5 @@ export enum ErrorMessages {
   required_fields_missing = "required_fields_missing",
   already_exists = "already_exists",
   unauthorized = "unauthorized",
+  internal_server_error = "internal_server_error",
 }

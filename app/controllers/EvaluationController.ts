@@ -1,23 +1,21 @@
 import { Request, Response } from "express";
+import { merge } from "lodash";
 import { ErrorMessages } from "../../app/errors/Errors.type";
 import { errors } from "../../app/errors/errors";
+import { EvaluationService } from "../../app/services/EvaluationService";
+import { UserService } from "../../app/services/UserService";
 import { Evaluation } from "../../app/types/Evaluation.type";
 import { Permissions, User } from "../../app/types/User.type";
-import { Controller } from "./AbstractController";
-import { UserController } from "./UserController";
 
-export class EvaluationController extends Controller<Evaluation> {
-  static userController = new UserController();
+export class EvaluationController {
+  private static userService = new UserService();
+  private static evaluationService = new EvaluationService();
 
-  static buildKeyFunction = (id: string): string => {
-    return `eval-${id}`;
-  };
-
-  async form(req: Request<{ id: string }, any, any>, res: Response) {
+  async getForm(req: Request<{ id: string }, any, any>, res: Response) {
     const {
       params: { id },
     } = req;
-    const evaluation = await Controller.database.get<Evaluation>(id);
+    const evaluation = await EvaluationController.evaluationService.get(id);
 
     if (!evaluation) throw errors.create(ErrorMessages.not_found);
 
@@ -32,31 +30,35 @@ export class EvaluationController extends Controller<Evaluation> {
       params: { id },
       body,
     } = req;
-    const evaluation = await Controller.database.get<Evaluation>(id);
+    const evaluation = await EvaluationController.evaluationService.get(id);
     if (!evaluation) throw errors.create(ErrorMessages.not_found);
 
     evaluation.responses = [...(evaluation.responses || []), body];
 
-    const result = await Controller.database.set(id, evaluation);
+    const result = await EvaluationController.evaluationService.update(
+      id,
+      evaluation
+    );
+    if (!result) throw errors.create(ErrorMessages.internal_server_error);
 
-    res.status(201).send(body);
+    res.status(201).send(body); //respond with the original answer
   }
 
   async getAllByUser(
     req: Request<Record<string, unknown>, any, any>,
     res: Response
   ) {
-    let user = req.params?.user as User; //TODO this is a naive check
+    let user = { ...(req.params?.user as User) };
     if (!user) throw errors.create(ErrorMessages.bad_request);
 
-    user = await EvaluationController.userController.getCurrentFormOfUser(user);
+    user = await EvaluationController.userService.get(user.username);
     const result: Record<string, Record<string, unknown>> = {};
     for (const ev of user.evaluations) {
       const { eval_name, permissions } = ev;
 
       //In case we ever want to add a state or something similar
-      const evaluation = await Controller.database.get<Evaluation>(
-        EvaluationController.buildKeyFunction(eval_name)
+      const evaluation = await EvaluationController.evaluationService.get(
+        eval_name
       );
       if (!evaluation) continue;
 
@@ -81,9 +83,9 @@ export class EvaluationController extends Controller<Evaluation> {
     const {
       params: { id },
     } = req;
-    const obj = await Controller.database.get<Evaluation>(id);
+    const evaluation = await EvaluationController.evaluationService.get(id);
 
-    if (obj) throw errors.create(ErrorMessages.already_exists);
+    if (evaluation) throw errors.create(ErrorMessages.already_exists);
 
     throw errors.create(ErrorMessages.not_found);
   }
@@ -94,25 +96,54 @@ export class EvaluationController extends Controller<Evaluation> {
   ) {
     const { body } = req;
     const {
-      params: { id, user },
+      params: { user },
     } = req;
-    const result = await Controller.database.set(id, body);
-    user.evaluations.push({
-      eval_name: result.code,
-      permissions: [Permissions.EDIT_EVAL, Permissions.FILL_FORM],
-    });
+    const result = await EvaluationController.evaluationService.create(body);
 
-    const userId = UserController.buildKeyFunction(user.username);
-    const alreadyExistingUser = await Controller.database.get<User>(userId);
+    const alreadyExistingUser = await EvaluationController.userService.get(
+      user.username
+    );
 
     if (!alreadyExistingUser) throw errors.create(ErrorMessages.not_found);
 
-    const modifiedObj = {
-      ...alreadyExistingUser,
-      ...user,
-    };
-    await Controller.database.set(userId, modifiedObj);
+    alreadyExistingUser.evaluations.push({
+      eval_name: result.code,
+      permissions: [Permissions.EDIT_EVAL, Permissions.FILL_FORM],
+    });
+    await EvaluationController.userService.update(
+      user.username,
+      alreadyExistingUser
+    );
 
     res.status(200).send(result);
+  }
+
+  async get(req: Request<{ id: string }, any, Evaluation>, res: Response) {
+    const {
+      params: { id },
+    } = req;
+    const evaluation = await EvaluationController.evaluationService.get(id);
+
+    if (!evaluation) throw errors.create(ErrorMessages.not_found);
+
+    res.status(200).send(evaluation);
+  }
+  async patch(req: Request<{ id: string }, any, Evaluation>, res: Response) {
+    const {
+      params: { id },
+      body,
+    } = req;
+    const currentlyExistingEvaluation =
+      await EvaluationController.evaluationService.get(id);
+
+    if (!currentlyExistingEvaluation)
+      throw errors.create(ErrorMessages.not_found);
+
+    const modifiedEvaluation = merge(currentlyExistingEvaluation, body);
+    const response = await EvaluationController.evaluationService.update(
+      id,
+      modifiedEvaluation
+    );
+    res.status(200).send(response);
   }
 }
