@@ -69,6 +69,7 @@ export class EvaluationController {
             [`${Object.keys(result[perm] || {}).length}`]: {
               code: eval_name,
               intervention_name: evaluation?.intervention?.name || "-",
+              state: evaluation.state || "-",
             },
           })
       );

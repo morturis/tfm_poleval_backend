@@ -10,12 +10,13 @@ export class EvaluationService {
 
   async get(id: string): Promise<Evaluation> {
     const transformedId = this.buildKey(id);
-    return await this.database.get(transformedId);
+    const evaluation = await this.database.get<Evaluation>(transformedId);
+    return Promise.resolve(evaluation);
   }
 
   async update(id: string, evaluation: Evaluation): Promise<Evaluation> {
     const transformedId = this.buildKey(id);
-    return await this.database.set(transformedId, evaluation);
+    return await this.database.set<Evaluation>(transformedId, evaluation);
   }
 
   async create(evaluation: Evaluation): Promise<Evaluation> {
@@ -23,6 +24,6 @@ export class EvaluationService {
     const evaluationAlreadyExists = await this.get(transformedId);
     if (evaluationAlreadyExists)
       throw errors.create(ErrorMessages.already_exists);
-    return await this.database.set(transformedId, evaluation);
+    return await this.database.set<Evaluation>(transformedId, evaluation);
   }
 }

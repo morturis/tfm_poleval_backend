@@ -32,6 +32,7 @@ export const validateBodySchema =
     if (!parsingResult.success) {
       throw errors.create(ErrorMessages.bad_request, parsingResult);
     }
+    req.body = parsingResult.data
     next();
   };
 

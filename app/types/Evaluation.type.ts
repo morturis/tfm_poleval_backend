@@ -53,8 +53,16 @@ const ConclusionRecomendationSchema = z.strictObject({
 });
 export const EvaluationResponseSchema = z.record(z.string(), z.string());
 
-export const EvaluationSchema = z.strictObject({
+enum EvaluationStates {
+  FIRST_STEPS = "FIRST_STEPS",
+  DESIGNING_FORM = "DESIGNING_FORM",
+  ACCEPTING_RESPONSES = "ACCEPTING_RESPONSES",
+  CONCLUSIONS = "CONCLUSIONS",
+}
+
+export const EvaluationBasicSchema = z.strictObject({
   code: z.string(),
+  state: z.nativeEnum(EvaluationStates).optional(),
   intervention: InterventionSchema,
 
   org: z.string().optional(),
@@ -78,4 +86,39 @@ export const EvaluationSchema = z.strictObject({
   recomendations: z.array(ConclusionRecomendationSchema).optional(),
 });
 
+export const EvaluationSchema = EvaluationBasicSchema.transform(
+  (evaluation) => {
+    const evaluationHasResponses = !!evaluation.responses?.length;
+    const evaluationHasForm = !!evaluation.form?.length;
+    const evaluationFormIsPublished = evaluationHasForm && true; //TODO
+
+    if (evaluationHasResponses && evaluationFormIsPublished)
+      return { ...evaluation, state: "ACCEPTING_RESPONSES" };
+
+    if (evaluationHasResponses && !evaluationFormIsPublished)
+      return { ...evaluation, state: "CONCLUSIONS" };
+
+    if (evaluationHasForm) return { ...evaluation, state: "DESIGNING_FORM" };
+
+    return { ...evaluation, state: "FIRST_STEPS" };
+  }
+).refine(
+  (evaluation) => {
+    const evaluationHasResponses = !!evaluation.responses?.length;
+    const evaluationHasForm = !!evaluation.form?.length;
+    const evaluationFormIsPublished = evaluationHasForm && true; //TODO
+
+    if (evaluationHasResponses && evaluationFormIsPublished)
+      return evaluation.state === EvaluationStates.ACCEPTING_RESPONSES;
+
+    if (evaluationHasResponses && !evaluationFormIsPublished)
+      return evaluation.state === EvaluationStates.CONCLUSIONS;
+
+    if (evaluationHasForm)
+      return evaluation.state === EvaluationStates.DESIGNING_FORM;
+
+    return evaluation.state === EvaluationStates.FIRST_STEPS;
+  },
+  { message: "invalid_state" }
+);
 export type Evaluation = z.infer<typeof EvaluationSchema>;

@@ -32,13 +32,13 @@ evalApi.get(
 evalApi.patch(
   "/:id",
   wrapControllerMiddleware(verifyUserPermissions(Permissions.EDIT_EVAL)),
-  validateBodySchema(EvaluationSchema.partial()), //Patch accepts partial body matching
+  validateBodySchema(EvaluationSchema), //Patch accepts partial body matching
   wrapControllerMiddleware(controller.patch)
 );
 evalApi.post(
   "/",
   wrapControllerMiddleware(verifyUserPermissions()),
-  validateBodySchema(EvaluationSchema.partial()),
+  validateBodySchema(EvaluationSchema),
   wrapControllerMiddleware(controller.create) //the classic post method from the abstract controller does not update the user with the permissions
 );
 
