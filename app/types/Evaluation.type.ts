@@ -35,8 +35,9 @@ const MeasurementSchema = z.strictObject({
 
 const IndicatorSchema = z.strictObject({
   name: z.string(),
-  measurements: z.array(MeasurementSchema).optional(),
   targetValue: z.string().optional(),
+  type: z.enum(["intervention", "evaluation"]),
+  measurements: z.array(MeasurementSchema).optional(),
 });
 
 const InterventionSchema = z.strictObject({
@@ -45,7 +46,6 @@ const InterventionSchema = z.strictObject({
   strategicPlan: z.string().optional(),
   otherInterventions: z.string().optional(),
   blockers: z.string().optional(),
-  indicators: z.array(IndicatorSchema),
 });
 const ConclusionRecomendationSchema = z.strictObject({
   text: z.string(),
@@ -53,17 +53,17 @@ const ConclusionRecomendationSchema = z.strictObject({
 });
 export const EvaluationResponseSchema = z.record(z.string(), z.string());
 
-enum EvaluationStates {
+export enum EvaluationStates {
   FIRST_STEPS = "FIRST_STEPS",
   DESIGNING_FORM = "DESIGNING_FORM",
   ACCEPTING_RESPONSES = "ACCEPTING_RESPONSES",
   CONCLUSIONS = "CONCLUSIONS",
 }
 
-export const EvaluationBasicSchema = z.strictObject({
+export const EvaluationSchema = z.strictObject({
   code: z.string(),
   state: z.nativeEnum(EvaluationStates).optional(),
-  intervention: InterventionSchema,
+  intervention: InterventionSchema.optional(),
 
   org: z.string().optional(),
   lifeCycle: z.string().optional(),
@@ -86,39 +86,22 @@ export const EvaluationBasicSchema = z.strictObject({
   recomendations: z.array(ConclusionRecomendationSchema).optional(),
 });
 
-export const EvaluationSchema = EvaluationBasicSchema.transform(
+export const EvaluationSchemaWithStateValidation = EvaluationSchema.transform(
   (evaluation) => {
     const evaluationHasResponses = !!evaluation.responses?.length;
     const evaluationHasForm = !!evaluation.form?.length;
     const evaluationFormIsPublished = evaluationHasForm && true; //TODO
 
-    if (evaluationHasResponses && evaluationFormIsPublished)
-      return { ...evaluation, state: "ACCEPTING_RESPONSES" };
-
     if (evaluationHasResponses && !evaluationFormIsPublished)
-      return { ...evaluation, state: "CONCLUSIONS" };
-
-    if (evaluationHasForm) return { ...evaluation, state: "DESIGNING_FORM" };
-
-    return { ...evaluation, state: "FIRST_STEPS" };
-  }
-).refine(
-  (evaluation) => {
-    const evaluationHasResponses = !!evaluation.responses?.length;
-    const evaluationHasForm = !!evaluation.form?.length;
-    const evaluationFormIsPublished = evaluationHasForm && true; //TODO
+      return { ...evaluation, state: EvaluationStates.CONCLUSIONS };
 
     if (evaluationHasResponses && evaluationFormIsPublished)
-      return evaluation.state === EvaluationStates.ACCEPTING_RESPONSES;
-
-    if (evaluationHasResponses && !evaluationFormIsPublished)
-      return evaluation.state === EvaluationStates.CONCLUSIONS;
+      return { ...evaluation, state: EvaluationStates.ACCEPTING_RESPONSES };
 
     if (evaluationHasForm)
-      return evaluation.state === EvaluationStates.DESIGNING_FORM;
+      return { ...evaluation, state: EvaluationStates.DESIGNING_FORM };
 
-    return evaluation.state === EvaluationStates.FIRST_STEPS;
-  },
-  { message: "invalid_state" }
+    return { ...evaluation, state: EvaluationStates.FIRST_STEPS };
+  }
 );
 export type Evaluation = z.infer<typeof EvaluationSchema>;

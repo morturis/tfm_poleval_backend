@@ -29,11 +29,12 @@ evalApi.get(
   wrapControllerMiddleware(verifyUserPermissions(Permissions.EDIT_EVAL)),
   wrapControllerMiddleware(controller.get)
 );
-evalApi.patch(
+evalApi.put(
   "/:id",
   wrapControllerMiddleware(verifyUserPermissions(Permissions.EDIT_EVAL)),
-  validateBodySchema(EvaluationSchema), //Patch accepts partial body matching
-  wrapControllerMiddleware(controller.patch)
+  validateBodySchema(EvaluationSchema),
+  wrapControllerMiddleware(controller.middleware.preventModifyingState),
+  wrapControllerMiddleware(controller.update)
 );
 evalApi.post(
   "/",

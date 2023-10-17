@@ -1,10 +1,14 @@
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import { merge } from "lodash";
 import { ErrorMessages } from "../../app/errors/Errors.type";
 import { errors } from "../../app/errors/errors";
 import { EvaluationService } from "../../app/services/EvaluationService";
 import { UserService } from "../../app/services/UserService";
-import { Evaluation } from "../../app/types/Evaluation.type";
+import {
+  Evaluation,
+  EvaluationSchemaWithStateValidation,
+  EvaluationStates,
+} from "../../app/types/Evaluation.type";
 import { Permissions, User } from "../../app/types/User.type";
 
 export class EvaluationController {
@@ -86,7 +90,7 @@ export class EvaluationController {
     } = req;
     const evaluation = await EvaluationController.evaluationService.get(id);
 
-    if (evaluation) throw errors.create(ErrorMessages.already_exists);
+    if (evaluation) res.status(200).send({ code: evaluation.code });
 
     throw errors.create(ErrorMessages.not_found);
   }
@@ -129,7 +133,7 @@ export class EvaluationController {
 
     res.status(200).send(evaluation);
   }
-  async patch(req: Request<{ id: string }, any, Evaluation>, res: Response) {
+  async update(req: Request<{ id: string }, any, Evaluation>, res: Response) {
     const {
       params: { id },
       body,
@@ -140,11 +144,113 @@ export class EvaluationController {
     if (!currentlyExistingEvaluation)
       throw errors.create(ErrorMessages.not_found);
 
-    const modifiedEvaluation = merge(currentlyExistingEvaluation, body);
     const response = await EvaluationController.evaluationService.update(
       id,
-      modifiedEvaluation
+      body
     );
     res.status(200).send(response);
   }
+
+  middleware = {
+    preventModifyingPropertiesBasedOnState: async (
+      req: Request<{ id: string }, any, Evaluation>,
+      res: Response,
+      next: NextFunction
+    ) => {
+      const {
+        params: { id },
+        body,
+      } = req;
+
+      const currentlyExistingEvaluation =
+        await EvaluationController.evaluationService.get(id);
+
+      const mergedEvaluation = EvaluationSchemaWithStateValidation.safeParse(
+        merge(currentlyExistingEvaluation, body)
+      );
+
+      if (!mergedEvaluation.success)
+        throw errors.create(
+          ErrorMessages.bad_request,
+          mergedEvaluation.error.message
+        );
+      if (body.state && mergedEvaluation.data.state !== body.state)
+        throw errors.create(
+          ErrorMessages.bad_request,
+          "State may not be modified"
+        );
+
+      const stateAfterModification = mergedEvaluation.data.state;
+      const allowedPropertiesPerState: Record<
+        EvaluationStates,
+        (keyof Evaluation)[]
+      > = {
+        [EvaluationStates.FIRST_STEPS]: [
+          "code",
+          "state",
+          "indicators", //creating indicators for the first time
+          "intervention",
+          "org",
+          "lifeCycle",
+          "goal",
+          "reason",
+          "utility",
+          "delimitation",
+          "teamMembers",
+          "tools",
+          "techniques",
+          "criteria",
+        ],
+        [EvaluationStates.DESIGNING_FORM]: ["code", "form"],
+        [EvaluationStates.ACCEPTING_RESPONSES]: ["code", "indicators"], //editing indicator measurements
+        [EvaluationStates.CONCLUSIONS]: [
+          "code",
+          "conclusions",
+          "recomendations",
+        ],
+      };
+
+      const propertiesModifiableInCurrentStep =
+        allowedPropertiesPerState[stateAfterModification];
+      const propertiesAttempingToModify = Object.keys(
+        body
+      ) as (keyof Evaluation)[];
+
+      for (let property of propertiesAttempingToModify)
+        if (!propertiesModifiableInCurrentStep.includes(property))
+          throw errors.create(
+            ErrorMessages.bad_request,
+            `Attempting to modify properties not allowed to by the flow: ${property}`
+          );
+
+      req.body = mergedEvaluation.data;
+      next();
+    },
+    preventModifyingState: async (
+      req: Request<{ id: string }, any, Evaluation>,
+      res: Response,
+      next: NextFunction
+    ) => {
+      const {
+        params: { id },
+        body,
+      } = req;
+      const currentlyExistingEvaluation =
+        await EvaluationController.evaluationService.get(id);
+      const mergedEvaluation = EvaluationSchemaWithStateValidation.safeParse(
+        merge(currentlyExistingEvaluation, body)
+      );
+      if (!mergedEvaluation.success)
+        throw errors.create(
+          ErrorMessages.bad_request,
+          mergedEvaluation.error.message
+        );
+      if (body.state && mergedEvaluation.data.state !== body.state)
+        throw errors.create(
+          ErrorMessages.bad_request,
+          "State may not be modified"
+        );
+      next();
+    },
+  };
 }

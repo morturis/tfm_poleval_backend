@@ -23,7 +23,7 @@ export const wrapControllerMiddleware =
     }
   };
 
-export const validateBodySchema =
+export const  validateBodySchema =
   (schema: ZodSchema) =>
   (req: Request<any, any, any>, res: Response, next: NextFunction) => {
     const { body } = req;

@@ -23,7 +23,7 @@ export class EvaluationService {
     const transformedId = this.buildKey(evaluation.code);
     const evaluationAlreadyExists = await this.get(transformedId);
     if (evaluationAlreadyExists)
-      throw errors.create(ErrorMessages.already_exists);
+      throw errors.create(ErrorMessages.already_exists); //TODO this should be in controller
     return await this.database.set<Evaluation>(transformedId, evaluation);
   }
 }
