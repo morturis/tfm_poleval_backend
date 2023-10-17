@@ -250,6 +250,7 @@ export class EvaluationController {
           ErrorMessages.bad_request,
           "State may not be modified"
         );
+      req.body = mergedEvaluation.data;
       next();
     },
   };
