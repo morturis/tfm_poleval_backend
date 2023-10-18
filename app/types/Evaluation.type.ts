@@ -62,6 +62,7 @@ export enum EvaluationStates {
 
 export const EvaluationSchema = z.strictObject({
   code: z.string(),
+  published: z.boolean().optional(),
   state: z.nativeEnum(EvaluationStates).optional(),
   intervention: InterventionSchema.optional(),
 
@@ -90,12 +91,12 @@ export const EvaluationSchemaWithStateValidation = EvaluationSchema.transform(
   (evaluation) => {
     const evaluationHasResponses = !!evaluation.responses?.length;
     const evaluationHasForm = !!evaluation.form?.length;
-    const evaluationFormIsPublished = evaluationHasForm && true; //TODO
+    const evaluationFormIsPublished = evaluationHasForm && evaluation.published;
 
     if (evaluationHasResponses && !evaluationFormIsPublished)
       return { ...evaluation, state: EvaluationStates.CONCLUSIONS };
 
-    if (evaluationHasResponses && evaluationFormIsPublished)
+    if (evaluationHasForm && evaluationFormIsPublished)
       return { ...evaluation, state: EvaluationStates.ACCEPTING_RESPONSES };
 
     if (evaluationHasForm)
