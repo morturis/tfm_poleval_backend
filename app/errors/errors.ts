@@ -26,6 +26,10 @@ const errorList: CustomError[] = [
     code: 409, //Conflict
     message: ErrorMessages.already_exists,
   },
+  {
+    code: 422, //Conflict
+    message: ErrorMessages.not_published,
+  },
 ];
 
 export const errors = {

@@ -17,4 +17,5 @@ export enum ErrorMessages {
   unauthorized = "unauthorized",
   internal_server_error = "internal_server_error",
   token_expired = "token_expired",
+  not_published = "not_published",
 }

@@ -23,6 +23,8 @@ export class EvaluationController {
 
     if (!evaluation) throw errors.create(ErrorMessages.not_found);
 
+    if(!evaluation.published) throw errors.create(ErrorMessages.not_published)
+
     res.status(200).send(evaluation.form || {});
   }
 
