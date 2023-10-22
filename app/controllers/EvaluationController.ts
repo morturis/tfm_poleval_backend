@@ -23,7 +23,7 @@ export class EvaluationController {
 
     if (!evaluation) throw errors.create(ErrorMessages.not_found);
 
-    if(!evaluation.published) throw errors.create(ErrorMessages.not_published)
+    if (!evaluation.published) throw errors.create(ErrorMessages.not_published);
 
     res.status(200).send(evaluation.form || {});
   }
@@ -63,10 +63,11 @@ export class EvaluationController {
       const { eval_name, permissions } = ev;
 
       //In case we ever want to add a state or something similar
-      const evaluation = await EvaluationController.evaluationService.get(
+      let evaluation = await EvaluationController.evaluationService.get(
         eval_name
       );
       if (!evaluation) continue;
+      evaluation = EvaluationSchemaWithStateValidation.parse(evaluation);
 
       permissions.forEach(
         (perm) =>
@@ -76,6 +77,7 @@ export class EvaluationController {
               code: eval_name,
               intervention_name: evaluation?.intervention?.name || "-",
               state: evaluation.state || "-",
+              published: evaluation.published,
             },
           })
       );
