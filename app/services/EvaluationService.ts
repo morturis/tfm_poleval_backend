@@ -25,7 +25,7 @@ export class EvaluationService {
     if (evaluationAlreadyExists)
       throw errors.create(ErrorMessages.already_exists); //TODO this should be in controller
 
-    evaluation.published = !!evaluation.published;
+    evaluation.published = false;
     return await this.database.set<Evaluation>(transformedId, evaluation);
   }
 }
