@@ -18,7 +18,7 @@ export class RedisDatabase {
       url: "redis://TFM:tfmPassword@localhost:6379",
     });
     RedisDatabase.client.on("error", (err) => {
-      throw errors.create(ErrorMessages.redis_error);
+      throw errors.create(ErrorMessages.redis_error, err);
     });
     RedisDatabase.client.on("connect", () => {
       console.log("Connected to redis successfully");
@@ -29,7 +29,10 @@ export class RedisDatabase {
     const maxRetries = 3;
     let currentRetries = 0;
     while (currentRetries < maxRetries) {
-      if (RedisDatabase.client.isOpen) return;
+      if (RedisDatabase.client.isOpen) {
+        console.log("Connection is open");
+        return;
+      }
       await RedisDatabase.client.connect();
       await new Promise((f) => setTimeout(f, 1000)); //delay for 1s
       currentRetries++;
@@ -39,8 +42,15 @@ export class RedisDatabase {
 
   async get<T>(key: string): Promise<T> {
     await this.checkConnection();
-
-    const storedValue = await RedisDatabase.client.get(key);
+    console.log(`Getting ${key}`);
+    let storedValue;
+    try {
+      storedValue = await RedisDatabase.client.get(key);
+    } catch (err) {
+      console.log(err);
+      throw errors.create(ErrorMessages.redis_error, err);
+    }
+    console.log(`Got ${key} = ${storedValue}`);
     if (!storedValue) return undefined as T;
 
     return JSON.parse(storedValue) as T;
@@ -48,8 +58,10 @@ export class RedisDatabase {
 
   async set<T>(key: string, value: T): Promise<T> {
     await this.checkConnection();
+    console.log(`Setting ${key} to ${value}`);
 
     const result = await RedisDatabase.client.set(key, JSON.stringify(value));
+    console.log(`Set ${key} to ${value}`);
 
     //on failure returns null
     if (!result) throw errors.create(ErrorMessages.not_inserted);

@@ -52,7 +52,7 @@ export const errors = {
   ) => {
     if (!err) return next();
     console.log("Error:", JSON.stringify(err)); //TODO improve logger
-    res.status(err.code);
+    res.status(err.code || 500);
     return res.json({ error: err });
   },
 };

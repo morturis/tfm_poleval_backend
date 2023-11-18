@@ -51,7 +51,10 @@ const ConclusionRecomendationSchema = z.strictObject({
   text: z.string(),
   reason: z.string(),
 });
-export const EvaluationResponseSchema = z.record(z.string(), z.string());
+export const EvaluationResponseSchema = z.record(
+  z.string(),
+  z.string().or(z.string().array())
+);
 
 export enum EvaluationStates {
   FIRST_STEPS = "FIRST_STEPS",
